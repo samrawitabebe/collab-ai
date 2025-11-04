@@ -1,0 +1,67 @@
+workflow:
+  rules:
+    - when: never
+
+stages: [lint, test, build]
+
+variables:
+  POETRY_VERSION: "2.0.1"
+  POETRY_CACHE_DIR: ".cache/pypoetry"
+  PIP_CACHE_DIR: ".cache/pip"
+
+.poetry_setup: &poetry_setup
+  before_script:
+    - python -V
+    - pip install -U pip "poetry==$POETRY_VERSION"
+    - poetry config virtualenvs.in-project true
+    - poetry install --no-interaction --no-root
+
+lint:
+  image: python:3.14
+  stage: lint
+  cache:
+    key: "poetry-${CI_COMMIT_REF_SLUG}"
+    paths: [ .venv, .cache/pypoetry, .cache/pip ]
+  <<: *poetry_setup
+  script:
+    - poetry run ruff check .
+    - poetry run mypy src
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+test:
+  stage: test
+  parallel:
+    matrix:
+      - PY: ["3.13", "3.14"]
+  image: "python:${PY}"
+  cache:
+    key: "poetry-${CI_COMMIT_REF_SLUG}-${PY}"
+    paths: [ .venv, .cache/pypoetry, .cache/pip ]
+  <<: *poetry_setup
+  script:
+    - poetry run pytest
+  artifacts:
+    when: always
+    reports:
+      junit: pytest-junit.xml
+    paths:
+      - pytest-junit.xml
+  variables:
+    PYTEST_ADDOPTS: "--junitxml=pytest-junit.xml"
+
+build:
+  image: python:3.14
+  stage: build
+  cache:
+    key: "poetry-${CI_COMMIT_REF_SLUG}-build"
+    paths: [ .venv, .cache/pypoetry, .cache/pip ]
+  <<: *poetry_setup
+  script:
+    - poetry build
+  artifacts:
+    paths: [ dist/ ]
+    expire_in: 1 week
+  rules:
+    - if: $CI_COMMIT_BRANCH
