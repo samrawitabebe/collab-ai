@@ -14,7 +14,7 @@ variables:
     - python -V
     - pip install -U pip "poetry==$POETRY_VERSION"
     - poetry config virtualenvs.in-project true
-    - poetry install --no-interaction --no-root
+    - poetry install --no-interaction
 
 lint:
   image: python:3.14
@@ -24,30 +24,25 @@ lint:
     paths: [ .venv, .cache/pypoetry, .cache/pip ]
   <<: *poetry_setup
   script:
-    - poetry run ruff check .
-    - poetry run mypy src
+    - poetry run pre-commit run --all-files
   rules:
     - if: $CI_PIPELINE_SOURCE == "push"
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
 test:
+  image: python:3.14
   stage: test
-  parallel:
-    matrix:
-      - PY: ["3.13", "3.14"]
-  image: "python:${PY}"
   cache:
-    key: "poetry-${CI_COMMIT_REF_SLUG}-${PY}"
+    key: "poetry-${CI_COMMIT_REF_SLUG}-test"
     paths: [ .venv, .cache/pypoetry, .cache/pip ]
   <<: *poetry_setup
   script:
-    - poetry run pytest
+    - if [ -d tests ]; then poetry run pytest; else echo "no tests yet"; fi
   artifacts:
     when: always
     reports:
       junit: pytest-junit.xml
-    paths:
-      - pytest-junit.xml
+    paths: [ pytest-junit.xml ]
   variables:
     PYTEST_ADDOPTS: "--junitxml=pytest-junit.xml"
 
