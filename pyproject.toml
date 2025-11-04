@@ -1,0 +1,47 @@
+[tool.poetry]
+name = "collab-ai"
+version = "0.1.0"
+description = "Collaborative multi-agent system for agile software development"
+authors = ["Samrawit F. Abebe, 550955@muni.cz"]
+readme = "README.md"
+packages = [{ include = "app", from = "src" }]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "0.121.0"
+uvicorn = { version = "0.38.0", extras = ["standard"] }
+httpx = "0.28.1"
+pydantic-settings = "2.11.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "8.4.2"
+ruff = "0.14.3"
+mypy = "1.18.2"
+
+[tool.ruff]
+target-version = "py314"
+line-length = 100
+exclude = [".venv", "build", "dist"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.mypy]
+python_version = "3.14"
+strict = true
+warn_unused_ignores = true
+pretty = true
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+allow_untyped_defs = true
+disallow_incomplete_defs = false
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
+
+[build-system]
+requires = ["poetry-core==2.2.1"]
+build-backend = "poetry.core.masonry.api"
