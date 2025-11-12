@@ -2,7 +2,7 @@ from uuid import uuid4
 
 from fastapi import APIRouter, status
 
-from app.api.models.base import ExecutionRequest, ExecutionResponse
+from app.models.base import ExecutionRequest, ExecutionResponse
 
 router = APIRouter()
 
