@@ -35,7 +35,7 @@ async def create_execution(
         db_session, RunCreateInput(id=run_id, orchestrator=request.orchestrator, status=RunStatus.PENDING).model_dump()
     )
 
-    background_tasks.add_task(execute_orchestration, run_id, request.orchestrator, request, db_session)
+    background_tasks.add_task(execute_orchestration, run_id, request)
 
     return ExecutionResponse(run_id=run_id)
 
