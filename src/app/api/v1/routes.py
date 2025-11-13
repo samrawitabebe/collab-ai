@@ -9,7 +9,7 @@ from app.api.models import ExecutionRequest, ExecutionResponse
 from app.database import repositories
 from app.database.models import RunCreateInput, RunStatus
 from app.database.sqlalchemy import get_db
-from app.orchestrators.models import ExecutionResult
+from app.orchestrators.models import ExecutionResult, OrchestratorOutput
 from app.services.execution_service import execute_orchestration
 
 router = APIRouter()
@@ -44,7 +44,14 @@ async def create_execution(
 @router.get("/executions/{run_id}", tags=["executions"], response_model=ExecutionResult)
 def get_execution(run_id: str, db_session: Annotated[Session, Depends(get_db)]) -> ExecutionResult:
     run = run_repository.get(db_session, run_id)
-    print(run)
     if not run:
         raise HTTPException(status_code=404, detail="Run not found")
-    return ExecutionResult.model_validate(run)
+
+    return ExecutionResult(
+        run_id=run.id,
+        orchestrator=run.orchestrator,
+        status=run.status,
+        created_at=run.created_at,
+        updated_at=run.updated_at,
+        output_json=OrchestratorOutput.model_validate(run.output_json) if run.output_json else None,
+    )
