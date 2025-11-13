@@ -1,15 +1,11 @@
-from sqlalchemy.orm import Session
-
 from app.database import repositories
 from app.database.sqlalchemy import SessionLocal
 from app.models.base import ExecutionRequest
 from app.models.db import RunStatus
-from app.orchestrators.langgraph import LangGraphOrchestrator
+from app.orchestrators.models import get_orchestrator
 
 
-async def execute_orchestration(
-    run_id: str, orchestrator_name: str, payload: ExecutionRequest, db_session: Session
-) -> None:
+async def execute_orchestration(run_id: str, payload: ExecutionRequest) -> None:
     run_repository = repositories.RUN
 
     with SessionLocal() as db_session:
@@ -17,24 +13,20 @@ async def execute_orchestration(
         if not run:
             return
 
-        orchestrator = None
-        if orchestrator_name.lower() == "langgraph":
-            orchestrator = LangGraphOrchestrator()
-        else:
-            raise ValueError(f"Unsupported orchestrator: {orchestrator_name}")
+        orchestrator = get_orchestrator(payload.orchestrator)
 
         try:
-            run = run_repository.get(db_session, run_id)
-            if not run:
-                return
-            print(f"Starting execution for run_id: {run_id} with orchestrator: {orchestrator_name}")
+            print(f"Starting execution for run_id: {run_id} with orchestrator: {payload.orchestrator}")
             run.status = RunStatus.RUNNING
             db_session.commit()
 
             result = await orchestrator.execute(payload)
-            run.status = RunStatus.COMPLETED if result.get("status") == "completed" else RunStatus.FAILED
+            print(f"Execution completed for run_id: {run_id} with result: {result}")
+            run.output_json = result
+            run.status = RunStatus.COMPLETED
             db_session.commit()
-        except Exception:
+        except Exception as e:
+            print(f"Execution failed for run_id: {run_id} with error: {e}")
             run = run_repository.get(db_session, run_id)
             if run:
                 run.status = RunStatus.FAILED
