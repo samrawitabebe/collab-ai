@@ -5,10 +5,11 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException, status
 from fastapi.params import Depends
 from sqlalchemy.orm import Session
 
+from app.api.models import ExecutionRequest, ExecutionResponse
 from app.database import repositories
+from app.database.models import RunCreateInput, RunStatus
 from app.database.sqlalchemy import get_db
-from app.models.base import ExecutionRequest, ExecutionResponse, ExecutionResult
-from app.models.db import RunCreateInput, RunStatus
+from app.orchestrators.models import ExecutionResult
 from app.services.execution_service import execute_orchestration
 
 router = APIRouter()

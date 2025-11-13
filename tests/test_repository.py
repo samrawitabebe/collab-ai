@@ -2,7 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.database import repositories
-from app.models.db import Base, RunStatus
+from app.database.models import Base, RunStatus
 
 
 def test_create_and_get_run():

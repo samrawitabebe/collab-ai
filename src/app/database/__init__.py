@@ -1,5 +1,5 @@
+from app.database.models import Run
 from app.database.repository import Repository
-from app.models.db import Run
 
 
 class Repositories:
