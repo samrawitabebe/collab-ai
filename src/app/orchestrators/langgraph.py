@@ -1,11 +1,14 @@
 import asyncio
 
+from langfuse import observe, propagate_attributes
 from langgraph.graph import END, StateGraph
 
 from app.orchestrators.base_orchestrator import BaseOrchestrator
 from app.orchestrators.models import DevOutput, OrchestartorInput, OrchestratorOutput, POOutput, RunState
+from app.telemetry.langfuse import langfuse_client
 
 
+@observe(name="po_agent")
 async def po_agent_node(state: RunState) -> RunState:
     await asyncio.sleep(2)
 
@@ -28,6 +31,7 @@ async def po_agent_node(state: RunState) -> RunState:
     )
 
 
+@observe(name="dev_agent")
 async def dev_agent_node(state: RunState) -> RunState:
     await asyncio.sleep(2)
 
@@ -52,25 +56,27 @@ async def dev_agent_node(state: RunState) -> RunState:
 
 class LangGraphOrchestrator(BaseOrchestrator):
     async def execute(self, payload: OrchestartorInput) -> OrchestratorOutput:
-        graph = StateGraph(RunState)
+        with langfuse_client.start_as_current_span(name="langgraph_orchestration", input=payload.model_dump()) as root:
+            with propagate_attributes(tags=["orchestrator", payload.orchestrator.value]):
+                graph = StateGraph(RunState)
 
-        graph.add_node("po_agent", _wrap_agent(po_agent_node))
-        graph.add_node("dev_agent", _wrap_agent(dev_agent_node))
+                graph.add_node("po_agent", _wrap_agent(po_agent_node))
+                graph.add_node("dev_agent", _wrap_agent(dev_agent_node))
 
-        graph.set_entry_point("po_agent")
-        graph.add_edge("po_agent", "dev_agent")
-        graph.add_edge("dev_agent", END)
+                graph.set_entry_point("po_agent")
+                graph.add_edge("po_agent", "dev_agent")
+                graph.add_edge("dev_agent", END)
 
-        app = graph.compile()
+                app = graph.compile()
+                initial_state = RunState(requirement=payload.requirement, input={})
 
-        initial_state = RunState(requirement=payload.requirement, input={})
+                final_state = await app.ainvoke(initial_state)
+                root.update_trace(output=final_state)
 
-        final_state = await app.ainvoke(initial_state)
-
-        return OrchestratorOutput(
-            status="completed",
-            state=RunState.model_validate(final_state),
-        )
+                return OrchestratorOutput(
+                    status="completed",
+                    state=RunState.model_validate(final_state),
+                )
 
 
 def _wrap_agent(fn):

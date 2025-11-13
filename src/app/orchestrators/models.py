@@ -18,7 +18,7 @@ class OrchestratorName(str, Enum):
 
 class OrchestartorInput(BaseModel):
     requirement: str = Field(min_length=10, description="Plain-text project requirement")
-    orchestrator: str
+    orchestrator: OrchestratorName
     human_approval_after: list[str] = Field(default_factory=list)
 
 

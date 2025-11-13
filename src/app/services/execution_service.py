@@ -22,7 +22,7 @@ async def execute_orchestration(run_id: str, payload: ExecutionRequest) -> None:
 
             result = await orchestrator.execute(payload)
             print(f"Execution completed for run_id: {run_id} with result: {result}")
-            run.output_json = result
+            run.output_json = result.model_dump()
             run.status = RunStatus.COMPLETED
             db_session.commit()
         except Exception as e:
