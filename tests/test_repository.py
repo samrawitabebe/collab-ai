@@ -11,14 +11,14 @@ def test_create_and_get_run():
     SessionLocal = sessionmaker(bind=engine)
     db = SessionLocal()
 
-    run_repo = repositories.RUN
+    run_repository = repositories.RUN
 
-    run_repo.create(
+    run_repository.create(
         db,
         {"id": "test123", "orchestrator": "langgraph", "status": RunStatus.PENDING},
     )
 
-    fetched = run_repo.get(db, "test123")
+    fetched = run_repository.get(db, "test123")
 
     assert fetched is not None
     assert fetched.orchestrator == "langgraph"
