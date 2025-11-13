@@ -1,13 +1,13 @@
 from typing import Annotated
 from uuid import uuid4
 
-from fastapi import APIRouter, BackgroundTasks, status
+from fastapi import APIRouter, BackgroundTasks, HTTPException, status
 from fastapi.params import Depends
 from sqlalchemy.orm import Session
 
 from app.database import repositories
 from app.database.sqlalchemy import get_db
-from app.models.base import ExecutionRequest, ExecutionResponse
+from app.models.base import ExecutionRequest, ExecutionResponse, ExecutionResult
 from app.models.db import RunCreateInput, RunStatus
 from app.services.execution_service import execute_orchestration
 
@@ -38,3 +38,12 @@ async def create_execution(
     background_tasks.add_task(execute_orchestration, run_id, request.orchestrator, request, db_session)
 
     return ExecutionResponse(run_id=run_id)
+
+
+@router.get("/executions/{run_id}", tags=["executions"], response_model=ExecutionResult)
+def get_execution(run_id: str, db_session: Annotated[Session, Depends(get_db)]) -> ExecutionResult:
+    run = run_repository.get(db_session, run_id)
+    print(run)
+    if not run:
+        raise HTTPException(status_code=404, detail="Run not found")
+    return ExecutionResult.model_validate(run)

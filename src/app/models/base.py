@@ -1,7 +1,8 @@
+from datetime import datetime
 from enum import Enum
 from typing import List
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class OrchestratorName(str, Enum):
@@ -18,3 +19,13 @@ class ExecutionRequest(BaseModel):
 class ExecutionResponse(BaseModel):
     run_id: str
     message: str = "Execution scheduled"
+
+
+class ExecutionResult(BaseModel):
+    run_id: str = Field(alias="id")
+    orchestrator: str
+    status: str
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
