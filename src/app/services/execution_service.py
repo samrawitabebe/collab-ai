@@ -1,8 +1,8 @@
+from app.api.models import ExecutionRequest
 from app.database import repositories
+from app.database.models import RunStatus
 from app.database.sqlalchemy import SessionLocal
-from app.models.base import ExecutionRequest
-from app.models.db import RunStatus
-from app.orchestrators.models import get_orchestrator
+from app.orchestrators.utils import get_orchestrator
 
 
 async def execute_orchestration(run_id: str, payload: ExecutionRequest) -> None:

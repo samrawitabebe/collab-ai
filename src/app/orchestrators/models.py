@@ -1,20 +1,57 @@
+from datetime import datetime
 from enum import Enum
-from typing import Dict, Type
+from typing import Any, Literal
 
-from app.orchestrators.base import Orchestrator
-from app.orchestrators.langgraph import LangGraphOrchestrator
+from pydantic import BaseModel, ConfigDict, Field
 
-ORCHESTRATORS: Dict[str, Type[Orchestrator]] = {
-    "langgraph": LangGraphOrchestrator,
-}
-
-
-def get_orchestrator(name: str) -> Orchestrator:
-    try:
-        return ORCHESTRATORS[name.lower()]()
-    except KeyError:
-        raise ValueError(f"Unsupported orchestrator: {name}")
+from app.database.models import RunStatus
 
 
 class Agent(str, Enum):
     PO = "po"
+
+
+class OrchestratorName(str, Enum):
+    LANGGRAPH = "langgraph"
+    AUTOGEN = "autogen"
+
+
+class OrchestartorInput(BaseModel):
+    requirement: str = Field(min_length=10, description="Plain-text project requirement")
+    orchestrator: str
+    human_approval_after: list[str] = Field(default_factory=list)
+
+
+class RunState(BaseModel):
+    requirement: str
+    input: dict[str, Any] = {}
+    current_agent: str | None = None
+
+    po_output: POOutput | None = None
+    dev_output: DevOutput | None = None
+
+
+class OrchestratorOutput(BaseModel):
+    status: Literal["completed", "failed"]
+    state: RunState
+
+
+class POOutput(BaseModel):
+    stories: list[str] = []
+    acceptance_criteria: list[str] = []
+
+
+class DevOutput(BaseModel):
+    pr_url: str | None
+    commit_id: str | None
+
+
+class ExecutionResult(BaseModel):
+    run_id: str = Field(alias="id")
+    orchestrator: OrchestratorName
+    status: RunStatus
+    created_at: datetime
+    updated_at: datetime
+    output_json: OrchestratorOutput | None = None
+
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
+from app.database.models import Base
 from app.database.sqlalchemy import engine
-from app.models.db import Base
 
 from .api.v1.routes import router as v1_router
 
