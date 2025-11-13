@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
 from app.database.models import RunStatus
 
@@ -22,6 +22,16 @@ class OrchestartorInput(BaseModel):
     human_approval_after: list[str] = Field(default_factory=list)
 
 
+class POOutput(BaseModel):
+    stories: list[str] = []
+    acceptance_criteria: list[str] = []
+
+
+class DevOutput(BaseModel):
+    pr_url: str | None
+    commit_id: str | None
+
+
 class RunState(BaseModel):
     requirement: str
     input: dict[str, Any] = {}
@@ -36,16 +46,6 @@ class OrchestratorOutput(BaseModel):
     state: RunState
 
 
-class POOutput(BaseModel):
-    stories: list[str] = []
-    acceptance_criteria: list[str] = []
-
-
-class DevOutput(BaseModel):
-    pr_url: str | None
-    commit_id: str | None
-
-
 class ExecutionResult(BaseModel):
     run_id: str = Field(alias="id")
     orchestrator: OrchestratorName
@@ -54,4 +54,4 @@ class ExecutionResult(BaseModel):
     updated_at: datetime
     output_json: OrchestratorOutput | None = None
 
-    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+    model_config = {"from_attributes": True, "populate_by_name": True}
