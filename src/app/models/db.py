@@ -3,12 +3,13 @@ from __future__ import annotations
 from datetime import datetime
 from enum import Enum
 
+from pydantic import BaseModel
 from sqlalchemy import DateTime, String
 from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
-class Base(DeclarativeBase):  # type: ignore[misc]
+class Base(DeclarativeBase):
     pass
 
 
@@ -27,3 +28,9 @@ class Run(Base):
     status: Mapped[RunStatus] = mapped_column(SqlEnum(RunStatus), default=RunStatus.PENDING)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class RunCreateInput(BaseModel):
+    id: str
+    orchestrator: str
+    status: RunStatus

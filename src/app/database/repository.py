@@ -22,4 +22,4 @@ class Repository(Generic[T]):
         return cast(Optional[T], db.get(self.model, input))
 
     def list(self, db: Session, limit: int = 100) -> list[T]:
-        return cast(list[T], db.query(self.model).limit(limit).all())
+        return db.query(self.model).limit(limit).all()
