@@ -1,15 +1,15 @@
-from typing import Dict, Type
-
 from app.orchestrators.base_orchestrator import BaseOrchestrator
-from app.orchestrators.langgraph import LangGraphOrchestrator
-
-ORCHESTRATORS: Dict[str, Type[BaseOrchestrator]] = {
-    "langgraph": LangGraphOrchestrator,
-}
+from app.orchestrators.langgraph.langgraph import LangGraphOrchestrator
+from app.orchestrators.models import OrchestratorName
 
 
-def get_orchestrator(name: str) -> BaseOrchestrator:
-    try:
-        return ORCHESTRATORS[name.lower()]()
-    except KeyError:
-        raise ValueError(f"Unsupported orchestrator: {name}")
+class OrchestratorError(Exception):
+    pass
+
+
+def get_orchestrator(name: OrchestratorName) -> BaseOrchestrator:
+    match name:
+        case OrchestratorName.LANGGRAPH:
+            return LangGraphOrchestrator()
+        case _:
+            raise OrchestratorError(f"Unsupported orchestrator: {name}")

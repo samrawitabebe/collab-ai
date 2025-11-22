@@ -1,12 +1,24 @@
 from fastapi import FastAPI
 
+from app.api.routes import router
+from app.api.v1.routes import router as executions_router
 from app.database.models import Base
 from app.database.sqlalchemy import engine
 
-from .api.v1.routes import router as v1_router
 
-app = FastAPI(title="Collab AI", version="0.1.0")
+def create_app() -> FastAPI:
+    app = FastAPI(
+        title="Collab AI",
+        description="Multi-agent SDLC orchestration system",
+        version="0.1.0",
+    )
 
-Base.metadata.create_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
 
-app.include_router(v1_router, prefix="/v1")
+    app.include_router(router)
+    app.include_router(executions_router)
+
+    return app
+
+
+app = create_app()

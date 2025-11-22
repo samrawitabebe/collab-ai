@@ -1,25 +1,54 @@
-from typing import Any, Generic, Optional, Type, TypeVar, cast
+from typing import Any
+from uuid import uuid4
 
 from sqlalchemy.orm import Session
 
-from app.database.models import Base
-
-T = TypeVar("T", bound=Base)
+from app.database.models import Execution, ExecutionStatus
 
 
-class Repository(Generic[T]):
-    def __init__(self, model: Type[T]) -> None:
-        self.model = model
+class ExecutionRepository:
+    """
+    Repository wrapper for the Execution table.
+    Handles creation, retrieval, and updates.
+    """
 
-    def create(self, db: Session, input: dict[str, Any]) -> T:
-        instance: T = self.model(**input)
-        db.add(instance)
-        db.commit()
-        db.refresh(instance)
-        return instance
+    def create(
+        self,
+        db_session: Session,
+        requirement: str,
+        orchestrator: str,
+        status: ExecutionStatus = ExecutionStatus.PENDING,
+    ) -> Execution:
+        execution = Execution(
+            id=str(uuid4()),
+            requirement=requirement,
+            orchestrator=orchestrator,
+            status=status,
+        )
+        db_session.add(execution)
+        db_session.commit()
+        db_session.refresh(execution)
+        return execution
 
-    def get(self, db: Session, input: str) -> Optional[T]:
-        return cast(Optional[T], db.get(self.model, input))
+    def get(self, db_session: Session, execution_id: str) -> Execution | None:
+        return db_session.query(Execution).filter(Execution.id == execution_id).first()
 
-    def list(self, db: Session, limit: int = 100) -> list[T]:
-        return db.query(self.model).limit(limit).all()
+    def update(
+        self,
+        db_session: Session,
+        execution: Execution,
+        *,
+        status: ExecutionStatus | None = None,
+        result: dict[str, Any] | None = None,
+    ) -> Execution:
+        if status is not None:
+            execution.status = status
+        if result is not None:
+            execution.result = result
+
+        db_session.commit()
+        db_session.refresh(execution)
+        return execution
+
+
+execution_repository = ExecutionRepository()

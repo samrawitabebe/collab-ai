@@ -1,40 +1,38 @@
-from __future__ import annotations
-
-from datetime import datetime
 from enum import Enum
-from typing import Any
 
-from pydantic import BaseModel
-from sqlalchemy import JSON, DateTime, String
-from sqlalchemy import Enum as SqlEnum
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy import JSON, Column, DateTime, String
+from sqlalchemy import Enum as SAEnum
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.sql import func
 
-
-class Base(DeclarativeBase):
-    pass
+Base = declarative_base()
 
 
-class RunStatus(str, Enum):
-    PENDING = "pending"
-    RUNNING = "running"
-    COMPLETED = "completed"
-    FAILED = "failed"
+class ExecutionStatus(str, Enum):
+    PENDING = "PENDING"
+    RUNNING = "RUNNING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
 
 
-class Run(Base):
-    __tablename__ = "runs"
+class Execution(Base):
+    """
+    Represents a single orchestration execution.
+    Stores all metadata plus the orchestrator's output JSON.
+    """
 
-    id: Mapped[str] = mapped_column(String, primary_key=True)
-    orchestrator: Mapped[str] = mapped_column(String, nullable=False)
-    status: Mapped[RunStatus] = mapped_column(SqlEnum(RunStatus), default=RunStatus.PENDING)
+    __tablename__ = "executions"
 
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    id = Column(String, primary_key=True, index=True)
+    requirement = Column(String, nullable=False)
+    orchestrator = Column(String, nullable=False)
 
-    output_json: Mapped[Any] = mapped_column(JSON, nullable=True)
+    status = Column(SAEnum(ExecutionStatus), nullable=False, default=ExecutionStatus.PENDING)
 
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), server_default=func.now())
 
-class RunCreateInput(BaseModel):
-    id: str
-    orchestrator: str
-    status: RunStatus
+    result = Column(JSON, nullable=True)
+
+    def __repr__(self):
+        return f"<Execution id={self.id} status={self.status}>"
