@@ -1,9 +1,17 @@
-from dotenv import load_dotenv
-from langfuse import get_client
+from langfuse import Langfuse
 
-load_dotenv()
-langfuse_client = get_client()
-try:
-    print("Langfuse auth OK:", langfuse_client.auth_check())
-except Exception as e:
-    print("Langfuse auth FAILED:", e)
+from app.config import settings
+
+
+def _init_client() -> Langfuse:
+    """
+    Initialize a single Langfuse client.
+    """
+    return Langfuse(
+        secret_key=settings.LANGFUSE_SECRET_KEY,
+        public_key=settings.LANGFUSE_PUBLIC_KEY,
+        base_url=settings.LANGFUSE_HOST,
+    )
+
+
+langfuse_client: Langfuse = _init_client()
