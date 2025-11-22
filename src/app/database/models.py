@@ -2,7 +2,7 @@ from enum import Enum
 
 from sqlalchemy import JSON, Column, DateTime, String
 from sqlalchemy import Enum as SAEnum
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.sql import func
 
 Base = declarative_base()
